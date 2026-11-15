@@ -1,0 +1,29 @@
+name: build-and-release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: typst-community/setup-typst@v5
+
+      - run: typst compile main.typ presentation.pdf
+
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload latest presentation.pdf --clobber || \
+          gh release create latest presentation.pdf --title "Latest Presentation" --notes "Automated rolling build."
